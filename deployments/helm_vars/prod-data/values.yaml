@@ -1,0 +1,15 @@
+base_gcr: us.gcr.io/terraform-254700/amplified
+module_host: data-toniq-session.doc.ai
+# module_name and module_version get set by the deploy script
+module_name: toniq-demo-module
+module_version: 0.0.2
+
+job:
+  enabled: true
+  entrypoint: scripts.demo.test-toniq
+
+app:
+  enabled: false
+
+notebooks:
+  enabled: false

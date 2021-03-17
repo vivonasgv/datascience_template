@@ -1,0 +1,4 @@
+apiVersion: v1
+name: toniq-demo-module
+version: 0.0.1
+description: Toniq Module App

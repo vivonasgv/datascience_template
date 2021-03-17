@@ -1,0 +1,17 @@
+base_gcr: us.gcr.io/terraform-254700/amplified
+module_host: data-toniq-session.staging.docai.beer
+# module_name and module_version get set by the deploy script
+module_name: toniq-demo-module
+module_version: 0.0.2
+
+job:
+  enabled: false
+
+app:
+  enabled: true
+  entrypoint: src/visualization/demo_streamlit.py
+
+notebooks:
+  enabled: true
+  files:
+  - notebooks/test-demo-module.ipynb

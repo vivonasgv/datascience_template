@@ -1,0 +1,7 @@
+# Module requirements for running tests and importing the Toniq SDK locally
+
+# Install the dependencies for toniq-sdk-python	# Sample dependency
+-r ./toniq-sdk-python/requirements.txt
+
+# Install toniq-sdk-python as development mode
+-e ./toniq-sdk-python

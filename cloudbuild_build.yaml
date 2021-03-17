@@ -1,0 +1,16 @@
+# Builds docker image and pushes tags to image repository
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    id: "module-build-push-image"
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        docker build \
+            -t us.gcr.io/terraform-254700/amplified/$REPO_NAME \
+            -t us.gcr.io/terraform-254700/amplified/$REPO_NAME:sha-$SHORT_SHA \
+            -t us.gcr.io/terraform-254700/amplified/$REPO_NAME:$(cat VERSION) \
+            -f build/docker/Dockerfile .
+        docker push us.gcr.io/terraform-254700/amplified/$REPO_NAME
+options:
+  machineType: N1_HIGHCPU_8

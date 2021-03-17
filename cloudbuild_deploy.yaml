@@ -1,0 +1,36 @@
+steps:
+- id: download-credentials
+  name: 'us.gcr.io/terraform-254700/docai-cloud-build:2.1.0'
+  entrypoint: /bin/bash
+  env:
+  - 'CLOUDSDK_CORE_PROJECT=${_CLOUDSDK_CORE_PROJECT}'
+  - 'CLOUDSDK_COMPUTE_ZONE=${_CLOUDSDK_COMPUTE_ZONE}'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLOUDSDK_CONTAINER_CLUSTER}'
+  args:
+   - -c
+   - |
+     mkdir -p ~/.helm/plugins
+     helm plugin install https://github.com/futuresimple/helm-secrets
+     gcloud container clusters get-credentials $$CLOUDSDK_CONTAINER_CLUSTER \
+            --region $$CLOUDSDK_COMPUTE_ZONE \
+            --project $$CLOUDSDK_CORE_PROJECT
+- name: 'us.gcr.io/terraform-254700/docai-cloud-build:2.1.0'
+  id: deploy-toniq-module
+  entrypoint: /bin/bash
+  env:
+  - 'MODULE_HOST=${_MODULE_HOST}'
+  - 'ENVIRONMENT_TARGET=${_ENVIRONMENT_TARGET}'
+  args:
+    - -c
+    - |
+      _VERSION_TAG=`cat VERSION | tr -d '\n'`
+      _SHORT_UID=`tr -dc A-Za-z0-9 </dev/urandom | head -c 6 | tr "[:upper:]" "[:lower:]"`
+
+      helm upgrade --wait --install \
+        -f ./deployments/helm_vars/$$ENVIRONMENT_TARGET/values.yaml \
+        --timeout 1800s \
+        --namespace default \
+        --set module_name=$REPO_NAME \
+        --set module_version=$${_VERSION_TAG} \
+        --set job.uid=$${_SHORT_UID} \
+        $REPO_NAME ./deployments/helm/
