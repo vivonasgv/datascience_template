@@ -1,3 +1,3 @@
 [submodule "toniq-sdk-python"]
 	path = toniq-sdk-python
-	url = https://github.com/doc-ai/toniq-sdk-python.git
+	url = https://doc-ai:51537df680add9345740b8b08dc55992ac1033d0@github.com/doc-ai/toniq-sdk-python.git
