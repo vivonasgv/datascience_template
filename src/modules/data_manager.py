@@ -76,7 +76,8 @@ class DataManager(ToniqEnvManager):
   def load_table(self, 
                  name : str,
                  store: str, 
-                 sql_tempview: bool = True):
+                 partition: str,
+                 sql_tempview: bool = False):
     """
     Simple demo function that loads a table (of patient information)
     and runs a SQL query to aggregate statistics
@@ -94,7 +95,7 @@ class DataManager(ToniqEnvManager):
     if store == "data":
         df = self.store.load_table(self.store_group_id[store], name)
     elif store == "feature":
-        df = self.store.load_feature(self.store_group_id[store], name)
+        df = self.store.load_feature(self.store_group_id[store], partition ,name)
     
     
     # query the table is the string is provided
