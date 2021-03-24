@@ -38,7 +38,12 @@ class DataManager(ToniqEnvManager):
     elif store == "feature":
         self.store.list_features(self.store_group_id[store])
 
-  def write_table(self, df , name, store="data", verbose = True, partition=None, save_presto=False):
+  def write_table(self,
+                  df ,
+                  name,
+                  store="data",
+                  verbose = True,
+                  partition=None, save_presto=False):
     """
     Writes csv to toniq datastore
 
@@ -77,6 +82,7 @@ class DataManager(ToniqEnvManager):
                  name : str,
                  store: str, 
                  partition: str,
+                 store_group_id: str= None,
                  sql_tempview: bool = False):
     """
     Simple demo function that loads a table (of patient information)

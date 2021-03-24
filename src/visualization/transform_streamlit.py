@@ -2,6 +2,9 @@
 
 import pandas as pd
 import streamlit as st
+import sys
+from copy import deepcopy
+import numpy as np
 
 
 import plotly.express as px
@@ -9,16 +12,35 @@ import plotly.figure_factory as ff
 import plotly.express as px
 
 sys.path.append("../modules")
-from module import ToniqEnvManager
-
-# set up the Toniq Env Manger
-tem = ToniqEnvManger(provider='gcp')
-
 
 @st.cache(allow_output_mutation=True)
-def load_presto_df(query):
-    global tem
-    return pd.read_sql_query(query, tem.conn)
+def load_presto_df(query=""):
+    url=f"https://github.com/avinashkz/income-prediction/raw/master/data/train.csv"
+    
+    columns = ["age",
+    "workclass", 
+    "fnlwgt", 
+    "education", 
+    "education_num", 
+    "marital_status",
+    "occupation",
+    "relationship",
+    "race", 
+    "sex",
+    "capital_gain",
+    "capital_loss", 
+    "hours_per_week", 
+    "native_country",
+    "income"]
+    df = pd.read_csv(url)
+    
+    df.columns = columns
+    
+    df["income"] = df["income"].apply(lambda x: "gt 50k" if ">" in x else "lt 50k" )
+    df = df.reset_index()
+
+    
+    return df
 
 
 
@@ -38,13 +60,17 @@ unsafe_allow_html=True,
 )
 
 
+feature_store = load_presto_df()
 st.markdown("## Feature Analysis")
 
 feature_columns = list(feature_store.columns)
 
-plot_mode = st.radio("", ["Scatter Plot", "Histogram", "Histogram 2D", "Heatmap 2D", "Map"], 0)
 
-sampled_feature_store = load_presto_df(q)
+
+st.write('<style>div.Widget.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
+
+plot_mode = st.sidebar.radio("", ["Scatter Plot", "Histogram", "Histogram 2D", "Heatmap 2D", "Map"], 0)
+
 
 
 
@@ -64,7 +90,7 @@ if plot_mode == "Scatter Plot":
       color_args = {"color": color_col} if color_col else {}
 
     with cols[1]:
-      fig = px.scatter(sampled_feature_store,x=x_col, y=y_col, **color_args )
+      fig = px.scatter(feature_store,x=x_col, y=y_col, **color_args )
       fig.update_layout(width=1000, height=800, font_size=20)
       st.plotly_chart(fig)
     
@@ -78,11 +104,28 @@ if plot_mode == "Histogram":
 
       st.markdown("### Choose Color")
       color_col = st.selectbox("Choose Feature",[None] + list(feature_store.columns), 0)
-      color_args = {"color": color_col} if color_col else {}
+        
+      if color_col:
+        color_args = {"color": color_col}
+        st.markdown("### Choose a Bar Mode")
+        barmode = st.selectbox("Choose a Bar Mode", ['group', 'overlay','relative','relative'], 0)
+        barmode_args = {"barmode": barmode}
+      else:
+        color_args = {}
+        barmode_args = {}
+        
+      st.markdown("### Enter a Tranformation")
+      transform_string = st.text_input("Enter a Tranformation","lambda x: x")
+      transform_fn = eval(transform_string)
+      
+      
+    
+      show_feature_store = deepcopy(feature_store)
+      show_feature_store[x_col] = show_feature_store[x_col].apply(transform_fn)
 
     with cols[1]:
 
-      fig = px.histogram(sampled_feature_store,x=x_col, **color_args )
+      fig = px.histogram(show_feature_store, x=x_col, **color_args, **barmode_args )
       fig.update_layout(width=1000, height=800, font_size=20)
       st.plotly_chart(fig)
 
@@ -109,7 +152,7 @@ if plot_mode == "Histogram 2D" :
 
     with cols[1]:
 
-      fig = px.density_heatmap(sampled_feature_store,
+      fig = px.density_heatmap(feature_store,
                                x=x_col,
                                y=y_col,
                                marginal_x="histogram",
@@ -139,7 +182,7 @@ if  plot_mode == "Heatmap 2D":
 
     with cols[1]:
 
-      fig = px.density_heatmap(sampled_feature_store,
+      fig = px.density_heatmap(feature_store,
                                x=x_col,
                                y=y_col,
                                z=z_col,
