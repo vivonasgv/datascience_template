@@ -2,29 +2,6 @@
 
 This module was generated from the CookieCutter template at: https://github.com/doc-ai/toniq-ds-cookiecutter
 
-## Repository Folder Structure
-
-- **docs**: Any documents relating to your project
-- **references**: Any reference material you include in your project
-
-- **reports**: Reports from your projects, ex. PDFs etc
-    - **figures**: Store Figures
-
-- **data**:
-    - **raw**: raw data files
-    - **interim/processed**: itermediate data processed from raw
-    - **external**: external datasets
-
-- **models**: Stored Models during Experiments
-
-- **src**: Source Files Containing your Experiment DAG
-    - **data**: Scripts for loading Raw Data
-    - **features**: Scripts for Preprocessing Raw Data
-    - **models**: Scripts for training and testing the model
-    - **visualization**: Scripts for visualizating experimental outputs along hte pipeline
-    - **demo_module**: Demo module code to be overridden by users
-
-## Quickstart
 
 After generating this repo with `cookiecutter`, run the following commands to get started:
 
@@ -48,6 +25,25 @@ Then run `lint` and `test`:
 make lint
 make test
 ```
+
+
+
+## Repository Folder Structure
+
+- **docs**: Any documents relating to your project
+- **references**: Any reference material you include in your project
+- **reports**: Reports from your projects, ex. PDFs etc
+
+- **src**: Source Files Containing your Experiment Pipeline
+    - **Extract**: Scripts for Extacting Raw Data
+    - **Transform**: Scripts for Transforming Raw Data into Features
+        - **streamlit_tranform.py**: Review Raw Features before tranforming them.
+        - **tranform.py** : Transform features and save in Feature Datastore
+    - **Experiment**: Scripts for Running Experiments on Transformed Data
+        - **Run Experiments**: Run Experiments and Save results (metrics, parameters, artifacts) into MLFLOW.
+        - **Review Experiments**: Review Previously Runned Experiments
+
+
 
 ## Deployments
 

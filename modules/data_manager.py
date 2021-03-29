@@ -134,7 +134,7 @@ class DataManager(ToniqEnvManager):
       presto_schema = str(df).lstrip("DataFrame").strip("[]").replace(":", "")
 
 
-      # drop table if it already exists (REDUNDENT?)
+      # drop table if it already exists
       self.cur.execute(f"DROP TABLE IF EXISTS {name}")
       self.cur.fetchall()
 

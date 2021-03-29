@@ -21,7 +21,7 @@ import streamlit as st
 from copy import deepcopy
 import numpy as np
 
-
+import datetime
 
 import plotly.express as px
 import plotly.figure_factory as ff
@@ -29,7 +29,7 @@ import plotly.express as px
 from glob import glob
 import json
 
-sys.path.append("../modules")
+sys.path.append("../../modules")
 
 
 
@@ -66,6 +66,8 @@ def load_presto_df(query=""):
     
 # Choose X, Y and Color Axis
 def interactive_scatter_plot(df):
+    
+    column2idx = {col:i for i, col in enumerate(df.columns)}
     cols = st.beta_columns([1,3])
     with cols[0]:
       st.markdown("### Choose X Axis")
@@ -90,6 +92,8 @@ def interactive_scatter_plot(df):
     
 # Choose X, Y and Color Axis
 def interactive_box_plot(df):
+    
+    column2idx = {col:i for i, col in enumerate(df.columns)}
     cols = st.beta_columns([1,3])
     
     df = df.sample(frac=0.1)
@@ -122,6 +126,8 @@ def interactive_box_plot(df):
     
 
 def interactive_histogram1D(df):
+    
+    column2idx = {col:i for i, col in enumerate(df.columns)}
     cols = st.beta_columns([1,3])
     with cols[0]:
       st.markdown("### Choose Feature")
@@ -156,6 +162,7 @@ def interactive_histogram1D(df):
 
 
 def interactive_histogram2D(df):
+    column2idx = {col:i for i, col in enumerate(df.columns)}
     # Choose X, Y and Color Axis
 
     cols = st.beta_columns([1,3])
@@ -184,6 +191,8 @@ def interactive_histogram2D(df):
 
     
 def interactive_heatmap2D(df):
+    
+    column2idx = {col:i for i, col in enumerate(df.columns)}
     # Choose X, Y and Color Axis
 
     cols = st.beta_columns([1, 3])
@@ -267,14 +276,26 @@ run_list = mlflow_client.search_runs(experiment_ids=experiment.experiment_id)
 run_list = list(filter(lambda r: bool(r.data.metrics), run_list))
 
 
+timestamp2date = lambda ts: datetime.datetime.fromtimestamp(ts // 1000)
+
 run_df = {}
-run_df["params"] = pd.DataFrame([{"run_id": r.info.run_id, **r.data.params} for r in run_list]).set_index("run_id")
-run_df["metrics"] = pd.DataFrame([{"run_id": r.info.run_id, **r.data.metrics} for r in run_list]).set_index("run_id")
+run_df["params"] = pd.DataFrame([{"run_id": r.info.run_id,
+                                   "start_time": timestamp2date(r.info.start_time),
+                                   "end_time": timestamp2date(r.info.end_time)
+                                  , **r.data.params} for r in run_list]).set_index("run_id")
+run_df["metrics"] = pd.DataFrame([{"run_id": r.info.run_id, 
+                                   "start_time": timestamp2date(r.info.start_time),
+                                   "end_time": timestamp2date(r.info.end_time)
+                                   
+                                   , **r.data.metrics} for r in run_list]).set_index("run_id")
+
 
 
 for rdf_type, rdf in run_df.items():
     for col in rdf.columns:
-        run_df[rdf_type][col] = pd.to_numeric(rdf[col])
+        if "time" not in col:
+            run_df[rdf_type][col] = pd.to_numeric(rdf[col])
+    
 # remove columns with nans to avoid issues with plotting
 
 for rdf_type, rdf in run_df.items():
@@ -289,8 +310,11 @@ chosen_metric = st.sidebar.selectbox("Choose a Metric", metric_options, 5)
 st.sidebar.write("## Sort Style")
 acending_sort = st.sidebar.selectbox("Ascending or Descending", ["Ascending", "Descending"] , 0)  == "Ascending"
 
+
+
 # get the best run
-run_df["metrics"] = run_df["metrics"][[chosen_metric]].sort_values(by=[chosen_metric], ascending=acending_sort )
+show_best_runs_df = run_df["metrics"][[chosen_metric]].sort_values(by=[chosen_metric], ascending=acending_sort )
+
 
 # get best run id
 best_run_id = run_df["metrics"].index[0]
@@ -331,11 +355,11 @@ def interactive_feature_analysis(df):
         run_config = json.load(f)
 
     st.markdown("## Feature Analysis")
-    st.markdown(f"#### Best Run ID: {best_run_id}")
+    st.sidebar.markdown(f"#### Best Run ID: {best_run_id}")
 
 
     
-    st.sidebar.markdown("### Select a Plotting Mode")
+    st.markdown("### Select a Plotting Mode")
     plot_mode = st.radio("", ["Box Plot", "Scatter Plot", "Histogram", "Histogram 2D", "Heatmap 2D"], 0)
 
     
@@ -358,11 +382,35 @@ def interactive_feature_analysis(df):
         
 
 def interactive_experiment_analysis(df):
+    
+    
+    
+    
+    
     st.markdown("## Experiment Analysis")
+    
+    
+    
+    cols = st.beta_columns([2,2])
+    with cols[0]:
+        st.write("#### Performance Over Time")
+        fig = px.line(run_df["metrics"], x="end_time", y=chosen_metric)
+        st.plotly_chart(fig)
+        
+    with cols[1]:
+        st.write("#### Histogram of Performance")
+        fig = px.histogram(run_df["metrics"], x=chosen_metric)
+        st.plotly_chart(fig)
+
+    
     
     st.markdown("#### Select a Plotting Mode")
     plot_mode = st.radio("", ["Scatter Plot", "Histogram", "Histogram 2D", "Heatmap 2D", "Box Plot"], 0)
 
+    
+    
+    
+    
     
     if plot_mode == "Box Plot":
         interactive_box_plot(df)
@@ -385,16 +433,17 @@ def interactive_experiment_analysis(df):
 
 
 def evaluate_experiment():
-    global run_df
+    global run_df, run_list
     
-    
+        
     # join metrics and params on run_id key
     st.sidebar.write("## Best Runs")
     st.sidebar.write(f"#### Best Run ID : {best_run_id}")
+    st.sidebar.write(f"#### Number of Runs : {len(run_df)}")
     
-    st.sidebar.write(run_df["metrics"].reset_index())
     df = pd.concat([run_df["params"], run_df["metrics"]], axis=1)
-        
+    
+    
     
     interactive_experiment_analysis(df)
     
