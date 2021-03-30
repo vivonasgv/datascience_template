@@ -1,5 +1,5 @@
 lint:
-	pylint tests/ src/
+	pylint modules/ src/
 
 test:
 	python -m unittest discover -v -f

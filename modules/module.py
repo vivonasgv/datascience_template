@@ -18,5 +18,3 @@ class ToniqEnvManager:
       user='any'
     )
     self.cur = self.conn.cursor()
-    
-

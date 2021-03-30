@@ -1,5 +1,5 @@
 
-
+#pylint: disable=C0303,E1101,E1310,E0401,pointless-string-statement,line-too-long
 """Demo Module definition file"""
 from module import ToniqEnvManager
 import pandas as pd 
@@ -7,6 +7,7 @@ import pyspark.sql.functions as f
 
 
 class DataManager(ToniqEnvManager):
+  #pylint: disable=R0913,E1120
   """Demo Module class to run in a Toniq Notebook"""
   def __init__(self, provider='gcp'):
     ToniqEnvManager.__init__(self, provider=provider)
@@ -22,10 +23,10 @@ class DataManager(ToniqEnvManager):
     
     
     for store in ["data", "feature"]:
-        # get data grops from toniq store
-        self.store_groups[store] = getattr(self.tq, f"get_{store}_groups")()
-         # default the storage data_group
-        self.store_group_id[store] = getattr(self.store_groups[store], f"storage_{store}_group")[0].id
+      # get data grops from toniq store
+      self.store_groups[store] = getattr(self.tq, f"get_{store}_groups")()
+       # default the storage data_group
+      self.store_group_id[store] = getattr(self.store_groups[store], f"storage_{store}_group")[0].id
     
   def list_tables(self, store="data"):
     
@@ -34,10 +35,11 @@ class DataManager(ToniqEnvManager):
     
     """
     if store == "data":
-        self.store.list_tables(self.store_group_id[store])
+      self.store.list_tables(self.store_group_id[store])
     elif store == "feature":
-        self.store.list_features(self.store_group_id[store])
+      self.store.list_features(self.store_group_id[store])
 
+  
   def write_table(self,
                   df ,
                   name,
@@ -59,30 +61,24 @@ class DataManager(ToniqEnvManager):
     
     # convert panadas df to spark df
     if "pandas" in str(type(df)):
-        df = self.spark.createDataFrame(df)
+      df = self.spark.createDataFrame(df)
 
     # write spark df to
     if store == "data":
-        self.store.write_table(df, self.store_group_id[store], name)
+      self.store.write_table(df, self.store_group_id[store], name)
     elif store == "feature":
-        self.store.write_feature(df, group_id=self.store_group_id[store], partition=partition, feature_name=name)
+      self.store.write_feature(df, group_id=self.store_group_id[store], partition=partition, feature_name=name)
     
-
     if verbose:
-        print(f"Saved Toniq Table ({name})")
-    
-    
+      print(f"Saved Toniq Table ({name})")
     
     if save_presto:
-        self.write_presto(df=df, name=name, verbose = verbose)
+      self.write_presto(df=df, name=name, verbose = verbose)
         
-        
-
   def load_table(self, 
                  name : str,
                  store: str, 
                  partition: str,
-                 store_group_id: str= None,
                  sql_tempview: bool = False):
     """
     Simple demo function that loads a table (of patient information)
@@ -99,57 +95,53 @@ class DataManager(ToniqEnvManager):
 
     """
     if store == "data":
-        df = self.store.load_table(self.store_group_id[store], name)
+      df = self.store.load_table(self.store_group_id[store], name)
     elif store == "feature":
-        df = self.store.load_feature(self.store_group_id[store], partition ,name)
+      df = self.store.load_feature(self.store_group_id[store], partition ,name)
     
     
     # query the table is the string is provided
     if sql_tempview:
-        df.createOrReplaceTempView(name)
+      df.createOrReplaceTempView(name)
     return df
 
   
   def write_presto(self, df, name, store,  verbose = False):
 
 
-      """
-      Simple demo function that loads a table (of patient information)
-      and runs a SQL query to aggregate statistics
+    """
+    Simple demo function that loads a table (of patient information)
+    and runs a SQL query to aggregate statistics
 
-      params:
+    params:
 
-          df : spark dataframe
-          table_name: name of the presto table
-          store: data or feature group
-          verbose: verbosity
+        df : spark dataframe
+        table_name: name of the presto table
+        store: data or feature group
+        verbose: verbosity
 
-      returns:
-          loaded_df: Spark dataframe
+    returns:
+        loaded_df: Spark dataframe
 
-      """
+    """
 
-      # Infer presto schema from spark dataframe string
-      df = df.select(*[f.col(c).alias(c.replace("-", ""))for c in df.columns])
-      presto_schema = str(df).lstrip("DataFrame").strip("[]").replace(":", "")
+    # Infer presto schema from spark dataframe string
+    df = df.select(*[f.col(c).alias(c.replace("-", ""))for c in df.columns])
+    presto_schema = str(df).lstrip("DataFrame").strip("[]").replace(":", "")
 
 
-      # drop table if it already exists
-      self.cur.execute(f"DROP TABLE IF EXISTS {name}")
-      self.cur.fetchall()
+    # drop table if it already exists
+    self.cur.execute(f"DROP TABLE IF EXISTS {name}")
+    self.cur.fetchall()
 
-      # create the table if it does not already exists
-      create_sql = f"""CREATE EXTERNAL TABLE IF NOT EXISTS {name}({presto_schema})"""
-      self.store.create_external_table(self.store_group_id[store], name, create_sql) 
-    
-    
-      
+    # create the table if it does not already exists
+    create_sql = f"""CREATE EXTERNAL TABLE IF NOT EXISTS {name}({presto_schema})"""
+    self.store.create_external_table(self.store_group_id[store], name, create_sql) 
 
-      if verbose:
-          print(f"Saved {name} into PRESTO")
+    if verbose:
+      print(f"Saved {name} into PRESTO")
         
-        
-  def query_presto(query=""):
+  def query_presto(self,query=""):
     """
     Query PRESTODB
     
@@ -160,5 +152,5 @@ class DataManager(ToniqEnvManager):
       pandas dataframe
     
     """
-    return pd.read_sql_query(q, self.conn)
+    return pd.read_sql_query(query, self.conn)
     
